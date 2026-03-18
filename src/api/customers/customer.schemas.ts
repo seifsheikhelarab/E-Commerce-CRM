@@ -101,3 +101,11 @@ export const updateCustomer = z.object({
     updatedAt: z.coerce.date().default(() => new Date())
 });
 
+export const createNote = z.object({
+    customerId: z.nanoid(),
+    body: z.string().min(1, 'Note body cannot be empty').nonempty().trim()
+});
+
+export const updateNote = z.object({
+    body: z.string().min(1, 'Note body cannot be empty').nonempty().trim()
+});

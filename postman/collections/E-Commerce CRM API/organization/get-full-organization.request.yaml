@@ -1,13 +1,14 @@
 $kind: http-request
 name: Get Full Organization
 method: GET
-url: "{{baseUrl}}/api/auth/organization/get-full-organization?organizationId={{\
-  organizationId}}"
+url: "{{baseUrl}}/api/auth/organization/get-full-organization"
 order: 3000
 headers:
   Authorization: Bearer {{sessionToken}}
 queryParams:
-  organizationId: "{{organizationId}}"
+  - key: organizationId
+    value: "{{organizationId}}"
+    disabled: true
 scripts:
   - type: afterResponse
     code: |-

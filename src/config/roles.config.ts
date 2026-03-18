@@ -6,7 +6,8 @@ export const DEFAULT_ROLES = {
         team: ['create', 'update', 'delete'],
         ac: ['create', 'read', 'update', 'delete'],
         orders: ['read', 'write', 'delete'],
-        employees: ['read', 'write', 'delete']
+        employees: ['read', 'write', 'delete'],
+        customers: ['read', 'write', 'delete']
     },
     admin: {
         organization: ['update'],
@@ -15,7 +16,8 @@ export const DEFAULT_ROLES = {
         team: ['create', 'update', 'delete'],
         ac: ['create', 'read', 'update', 'delete'],
         orders: ['read', 'write', 'delete'],
-        employees: ['read', 'write', 'delete']
+        employees: ['read', 'write', 'delete'],
+        customers: ['read', 'write', 'delete']
     },
     member: {
         organization: [],
@@ -24,7 +26,8 @@ export const DEFAULT_ROLES = {
         team: [],
         ac: [],
         orders: ['read'],
-        employees: ['read']
+        employees: ['read'],
+        customers: ['read']
     }
 } as const;
 

@@ -14,7 +14,7 @@ export function getPagination(
     }
     const skip = (page - 1) * limit;
     const take = limit;
-    return { skip, take };
+    return { skip, take, page, limit };
 }
 
 export const paginationSchema = z.object({

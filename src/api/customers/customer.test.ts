@@ -83,7 +83,7 @@ beforeAll(async () => {
                 password: 'Password123!'
             }
         });
-        
+
         if (!signin || !signin.token) {
             throw new Error('Signin failed');
         }
@@ -168,7 +168,9 @@ describe('Customer API', () => {
 
         expect(response.status).toBe(200);
         expect(response.body.data.name).toBe(updateData.name);
-        expect(response.body.data.lifecycleStage).toBe(updateData.lifecycleStage);
+        expect(response.body.data.lifecycleStage).toBe(
+            updateData.lifecycleStage
+        );
     });
 
     it('should return 401 if unauthorized', async () => {

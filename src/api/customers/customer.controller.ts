@@ -11,7 +11,7 @@ import type { AuthenticatedRequest } from '../../middlewares/auth.middleware.js'
 
 export const getAllCustomers = asyncHandler(
     async (req: AuthenticatedRequest, res: Response) => {
-        const { skip, take } = getPagination({
+        const { skip, take, page, limit } = getPagination({
             page: req.query.page as string,
             limit: req.query.limit as string
         });
@@ -28,13 +28,71 @@ export const getAllCustomers = asyncHandler(
             skip
         );
 
+        ResponseHandler.paginated(
+            res,
+            response.customers,
+            'Customers fetched successfully',
+            page,
+            limit,
+            response.total,
+            req.url
+        );
+    }
+);
+
+export const createCustomer = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response) => {
+        const { activeOrganizationId, userId } = req.session;
+
+        if (!activeOrganizationId || !userId) {
+            throw new AuthorizationError('No active organization selected');
+        }
+
+        const response = await customerService.createCustomer(
+            req.body,
+            activeOrganizationId
+        );
+
         if (!response) {
-            throw new Error('Failed to fetch customers');
+            throw new Error('Failed to create customer');
         }
 
         ResponseHandler.success(
             res,
-            'Customers fetched successfully',
+            'Customer created successfully',
+            HttpStatus.CREATED,
+            response,
+            req.url
+        );
+    }
+);
+
+export const getCustomer = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response) => {
+        const { activeOrganizationId } = req.session;
+
+        const id = req.params.id as string;
+
+        if (!id) {
+            throw new Error('Customer ID is required');
+        }
+
+        if (!activeOrganizationId) {
+            throw new AuthorizationError('No active organization selected');
+        }
+
+        const response = await customerService.getCustomerDetails(
+            id,
+            activeOrganizationId
+        );
+
+        if (!response) {
+            throw new Error('Failed to fetch customer');
+        }
+
+        ResponseHandler.success(
+            res,
+            'Customer fetched successfully',
             HttpStatus.OK,
             response,
             req.url
@@ -42,109 +100,196 @@ export const getAllCustomers = asyncHandler(
     }
 );
 
-export const createCustomer = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+export const updateCustomer = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response) => {
+        const { activeOrganizationId } = req.session;
 
-    const { activeOrganizationId, userId } = req.session;
+        const id = req.params.id as string;
 
-    if (!activeOrganizationId || !userId) {
-        throw new AuthorizationError('No active organization selected');
+        if (!id) {
+            throw new Error('Customer ID is required');
+        }
+
+        if (!activeOrganizationId) {
+            throw new AuthorizationError('No active organization selected');
+        }
+
+        const response = await customerService.updateCustomer(
+            id,
+            req.body,
+            activeOrganizationId
+        );
+
+        if (!response) {
+            throw new Error('Failed to update customer');
+        }
+
+        ResponseHandler.success(
+            res,
+            'Customer updated successfully',
+            HttpStatus.OK,
+            response,
+            req.url
+        );
     }
+);
 
-    const response = await customerService.createCustomer(req.body, activeOrganizationId);
+export const deleteCustomer = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response) => {
+        const { activeOrganizationId } = req.session;
 
-    if (!response) {
-        throw new Error('Failed to create customer');
+        const id = req.params.id as string;
+
+        if (!id) {
+            throw new Error('Customer ID is required');
+        }
+
+        if (!activeOrganizationId) {
+            throw new AuthorizationError('No active organization selected');
+        }
+
+        const response = await customerService.deleteCustomer(
+            id,
+            activeOrganizationId
+        );
+
+        if (!response) {
+            throw new Error('Failed to delete customer');
+        }
+
+        ResponseHandler.success(
+            res,
+            'Customer deleted successfully',
+            HttpStatus.OK,
+            response,
+            req.url
+        );
     }
+);
 
-    ResponseHandler.success(
-        res,
-        'Customer created successfully',
-        HttpStatus.CREATED,
-        response,
-        req.url
-    );
-})
+export const getCustomerNotes = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response) => {
+        const { activeOrganizationId } = req.session;
 
-export const getCustomer = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { activeOrganizationId } = req.session;
+        const id = req.params.id as string;
 
-    const id = req.params.id as string;
+        if (!id) {
+            throw new Error('Customer ID is required');
+        }
 
-    if (!id) {
-        throw new Error('Customer ID is required');
+        if (!activeOrganizationId) {
+            throw new AuthorizationError('No active organization selected');
+        }
+
+        const response = await customerService.getCustomerNotes(id);
+
+        if (!response) {
+            throw new Error('Failed to fetch customer notes');
+        }
+
+        ResponseHandler.success(
+            res,
+            'Customer notes fetched successfully',
+            HttpStatus.OK,
+            response,
+            req.url
+        );
     }
+);
 
-    if (!activeOrganizationId) {
-        throw new AuthorizationError('No active organization selected');
+export const createNote = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response) => {
+        const { activeOrganizationId, userId } = req.session;
+
+        const id = req.params.id as string;
+
+        if (!id) {
+            throw new Error('Customer ID is required');
+        }
+
+        if (!activeOrganizationId) {
+            throw new AuthorizationError('No active organization selected');
+        }
+
+        const response = await customerService.createNote(id, req.body, userId);
+
+        if (!response) {
+            throw new Error('Failed to create note');
+        }
+
+        ResponseHandler.success(
+            res,
+            'Note created successfully',
+            HttpStatus.CREATED,
+            response,
+            req.url
+        );
     }
+);
 
-    const response = await customerService.getCustomerDetails(id, activeOrganizationId);
+export const updateNote = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response) => {
+        const { activeOrganizationId, userId } = req.session;
 
-    if (!response) {
-        throw new Error('Failed to fetch customer');
+        const id = req.params.id as string;
+        const noteId = req.params.noteId as string;
+
+        if (!id || !noteId) {
+            throw new Error('Customer ID and Note ID are required');
+        }
+
+        if (!activeOrganizationId) {
+            throw new AuthorizationError('No active organization selected');
+        }
+
+        const response = await customerService.updateNote(
+            id,
+            noteId,
+            req.body,
+            userId
+        );
+
+        if (!response) {
+            throw new Error('Failed to update note');
+        }
+
+        ResponseHandler.success(
+            res,
+            'Note updated successfully',
+            HttpStatus.OK,
+            response,
+            req.url
+        );
     }
+);
 
-    ResponseHandler.success(
-        res,
-        'Customer fetched successfully',
-        HttpStatus.OK,
-        response,
-        req.url
-    );
-});
+export const deleteNote = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response) => {
+        const { activeOrganizationId, userId } = req.session;
 
-export const updateCustomer = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { activeOrganizationId } = req.session;
+        const id = req.params.id as string;
+        const noteId = req.params.noteId as string;
 
-    const id = req.params.id as string;
+        if (!id || !noteId) {
+            throw new Error('Customer ID and Note ID are required');
+        }
 
-    if (!id) {
-        throw new Error('Customer ID is required');
+        if (!activeOrganizationId) {
+            throw new AuthorizationError('No active organization selected');
+        }
+
+        const response = await customerService.deleteNote(id, noteId, userId);
+
+        if (!response) {
+            throw new Error('Failed to delete note');
+        }
+
+        ResponseHandler.success(
+            res,
+            'Note deleted successfully',
+            HttpStatus.OK,
+            response,
+            req.url
+        );
     }
-
-    if (!activeOrganizationId) {
-        throw new AuthorizationError('No active organization selected');
-    }
-
-    const response = await customerService.updateCustomer(id, req.body, activeOrganizationId);
-
-    if (!response) {
-        throw new Error('Failed to update customer');
-    }
-
-    ResponseHandler.success(
-        res,
-        'Customer updated successfully',
-        HttpStatus.OK,
-        response,
-        req.url
-    );
-});
-
-export const deleteCustomer = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { activeOrganizationId } = req.session;
-
-    const id = req.params.id as string;
-
-    if (!id) {
-        throw new Error('Customer ID is required');
-    }
-
-    if (!activeOrganizationId) {
-        throw new AuthorizationError('No active organization selected');
-    }
-
-    const response = await customerService.deleteCustomer(id, activeOrganizationId);
-
-    if (!response) {
-        throw new Error('Failed to delete customer');
-    }
-
-    ResponseHandler.success(
-        res,
-        'Customer deleted successfully',
-        HttpStatus.OK,
-        response,
-        req.url
-    );
-});
+);

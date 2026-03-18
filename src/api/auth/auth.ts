@@ -14,7 +14,8 @@ const ac = createAccessControl({
     member: ['create', 'update', 'delete'],
     invitation: ['create', 'cancel'],
     ac: ['create', 'read', 'update', 'delete'],
-    orders: ['read', 'write', 'delete']
+    orders: ['read', 'write', 'delete'],
+    customers: ['read', 'write', 'delete']
 });
 
 export const auth = betterAuth({
@@ -126,7 +127,6 @@ export const auth = betterAuth({
         }
     }
 });
-
 
 /**
  * Retrieve the current authentication session from request headers.

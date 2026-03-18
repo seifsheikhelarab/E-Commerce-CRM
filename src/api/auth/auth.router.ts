@@ -11,7 +11,6 @@ const authRouter = Router();
  */
 authRouter.get('/me', protect, AuthController.getMe);
 
-
 /**
  * Forward all Better Auth API routes.
  *

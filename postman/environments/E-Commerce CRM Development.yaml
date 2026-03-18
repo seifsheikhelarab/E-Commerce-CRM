@@ -48,3 +48,7 @@ values:
       value: ''
       enabled: true
       type: default
+    - key: customerId
+      value: ''
+      enabled: true
+      type: default
