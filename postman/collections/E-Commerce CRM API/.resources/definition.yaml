@@ -1,33 +1,36 @@
 $kind: collection
 name: E-Commerce CRM API
 description: >-
-    Complete API collection for the E-Commerce CRM application.
+  Complete API collection for the E-Commerce CRM application.
 
 
-    ## Authentication
+  ## Authentication
 
-    This API uses Better Auth for authentication. After signing in, extract the
-    session token from the response and use it in the Authorization header as a
-    Bearer token.
-
-
-    ## Organization
-
-    Users can create and manage organizations. Each organization can have multiple
-    members with different roles (owner, admin, member).
+  This API uses Better Auth for authentication. After signing in, extract the
+  session token from the response and use it in the Authorization header as a
+  Bearer token.
 
 
-    ## Getting Started
+  ## Organization
 
-    1. Sign up with email/password
+  Users can create and manage organizations. Each organization can have multiple
+  members with different roles (owner, admin, member).
 
-    2. Sign in to get a session token
 
-    3. Create an organization
+  ## Getting Started
 
-    4. Invite members to your organization
+  1. Sign up with email/password
+
+  2. Sign in to get a session token
+
+  3. Create an organization
+
+  4. Invite members to your organization
 variables:
-    baseUrl: http://localhost:3000
-    userEmail: ''
-    sessionToken: ''
-    organizationId: ''
+  baseUrl: http://localhost:3000
+  userEmail: ""
+  sessionToken: ""
+  organizationId: ""
+  userPassword: ""
+  organizationName: ""
+  organizationSlug: ""

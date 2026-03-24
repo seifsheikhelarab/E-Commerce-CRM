@@ -38,4 +38,4 @@ scripts:
           console.log("Organization ID saved: " + jsonData.id);
       }
     language: text/javascript
-order: 1057
+order: 1000

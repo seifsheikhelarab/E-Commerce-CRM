@@ -12,7 +12,7 @@ body:
 
     \t\"permission\": {\r
 
-    \t\t\"member\": [\r
+    \t\t\"orders\": [\r
 
     \t\t\t\"create\",\r
 
@@ -28,7 +28,7 @@ body:
 
     \t\t],\r
 
-    \t\t\"employees\": [\r
+    \t\t\"member\": [\r
 
     \t\t\t\"read\",\r
 

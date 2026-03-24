@@ -1,0 +1,16 @@
+$kind: http-request
+name: Set Active Org
+url: "{{baseUrl}}/api/auth/organization/set-active"
+method: POST
+headers:
+  Authorization: Bearer {{sessionToken}}
+body:
+  type: json
+  content: "{\r
+
+    \t\"organizationId\": \"{{organizationId}}\",\r
+
+    \t\"organizationSlug\": \"{{organizationSlug}}\"\r
+
+    }"
+order: 6636

@@ -10,12 +10,22 @@ import { sendEmail } from '../../utils/email.util.js';
 import { DEFAULT_ROLES } from '../../config/roles.config.js';
 
 const ac = createAccessControl({
-    organization: ['update', 'delete'],
-    member: ['create', 'update', 'delete'],
-    invitation: ['create', 'cancel'],
-    ac: ['create', 'read', 'update', 'delete'],
+    organization: ['read', 'update', 'delete'],
+    member: ['read', 'create', 'update', 'delete'],
+    invitation: ['read', 'create', 'cancel'],
+    team: ['read', 'create', 'update', 'delete'],
+    ac: ['read', 'create', 'update', 'delete'],
+    customers: ['read', 'write', 'delete'],
     orders: ['read', 'write', 'delete'],
-    customers: ['read', 'write', 'delete']
+    products: ['read', 'write', 'delete'],
+    integrations: ['read', 'write', 'delete'],
+    webhooks: ['read', 'write', 'delete'],
+    sync: ['read', 'write'],
+    segments: ['read', 'write', 'delete'],
+    campaigns: ['read', 'write', 'delete'],
+    supportTickets: ['read', 'write', 'delete'],
+    tags: ['read', 'write', 'delete'],
+    reports: ['read']
 });
 
 export const auth = betterAuth({
@@ -86,9 +96,9 @@ export const auth = betterAuth({
                 });
             },
             roles: {
-                root: ac.newRole(DEFAULT_ROLES.root),
-                admin: ac.newRole(DEFAULT_ROLES.admin),
-                member: ac.newRole(DEFAULT_ROLES.member)
+                root: ac.newRole(DEFAULT_ROLES['root']),
+                admin: ac.newRole(DEFAULT_ROLES['admin']),
+                member: ac.newRole(DEFAULT_ROLES['member'])
             },
             dynamicAccessControl: {
                 enabled: true

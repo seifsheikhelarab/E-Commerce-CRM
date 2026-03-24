@@ -108,6 +108,7 @@ model OrganizationRole {
     createdAt      DateTime     @default(now())
     updatedAt      DateTime?    @updatedAt
 
+    @@unique([organizationId, role])
     @@index([organizationId])
     @@index([role])
     @@map("organizationRole")
@@ -122,7 +123,7 @@ model Member {
     role           String       @default("member")
     createdAt      DateTime
 
-    @@unique([userId])
+    @@unique([userId, organizationId])
     @@index([organizationId])
     @@index([userId])
     @@map("member")

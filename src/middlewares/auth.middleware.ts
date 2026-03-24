@@ -92,37 +92,45 @@ export const requirePermission = (...permissions: string[]) =>
             );
         }
 
-        // Use Better Auth's hasPermission API which handles both static and dynamic roles
-        const permissionChecks = await Promise.all(
-            permissions.map(async (p) => {
-                const [resource, action] = p.split(':');
-                if (!resource || !action) return false;
-
-                try {
-                    const result = await auth.api.hasPermission({
-                        headers,
-                        body: {
-                            permissions: { [resource]: [action] },
-                            organizationId: activeOrganizationId
-                        }
-                    });
-                    // result.success is true if the user has the permissions
-                    return result.success === true;
-                } catch {
-                    return false;
+        // Group permissions by resource for efficient checking
+        const permissionsByResource = permissions.reduce<
+            Record<string, string[]>
+        >((acc, p) => {
+            const [resource, action] = p.split(':');
+            if (resource && action) {
+                if (!acc[resource]) {
+                    acc[resource] = [];
                 }
-            })
-        );
+                acc[resource].push(action);
+            }
+            return acc;
+        }, {});
 
-        const hasAnyRequiredPermission = permissionChecks.some((has) => has);
+        // Use Better Auth's hasPermission API which handles both static and dynamic roles
+        try {
+            const result = await auth.api.hasPermission({
+                headers,
+                body: {
+                    permissions: permissionsByResource,
+                    organizationId: activeOrganizationId
+                }
+            });
 
-        if (!hasAnyRequiredPermission) {
+            if (!result.success) {
+                throw new AuthorizationError(
+                    'Insufficient permissions for this resource.'
+                );
+            }
+        } catch (error) {
+            if (error instanceof AuthorizationError) {
+                throw error;
+            }
             throw new AuthorizationError(
-                'Insufficient permissions for this resource.'
+                'Permission check failed. You may not have access to this resource.'
             );
         }
 
-        // Fetch membership to attach to request for downstream use (optional but helpful)
+        // Fetch membership to attach to request for downstream use
         const membership = await prisma.member.findFirst({
             where: {
                 userId: session.user.id,

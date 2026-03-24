@@ -2,7 +2,7 @@ $kind: http-request
 name: Delete Organization
 method: POST
 url: '{{baseUrl}}/api/auth/organization/delete'
-order: 6000
+order: 5000
 headers:
   - key: Content-Type
     value: application/json

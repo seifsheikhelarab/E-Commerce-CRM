@@ -1,23 +1,58 @@
+export type RolePermissions = {
+    organization: ('read' | 'update' | 'delete')[];
+    member: ('read' | 'create' | 'update' | 'delete')[];
+    invitation: ('read' | 'create' | 'cancel')[];
+    team: ('read' | 'create' | 'update' | 'delete')[];
+    ac: ('read' | 'create' | 'update' | 'delete')[];
+    customers: ('read' | 'write' | 'delete')[];
+    orders: ('read' | 'write' | 'delete')[];
+    products: ('read' | 'write' | 'delete')[];
+    integrations: ('read' | 'write' | 'delete')[];
+    webhooks: ('read' | 'write' | 'delete')[];
+    sync: ('read' | 'write')[];
+    segments: ('read' | 'write' | 'delete')[];
+    campaigns: ('read' | 'write' | 'delete')[];
+    supportTickets: ('read' | 'write' | 'delete')[];
+    tags: ('read' | 'write' | 'delete')[];
+    reports: 'read'[];
+};
+
 export const DEFAULT_ROLES = {
     root: {
-        organization: ['update', 'delete'],
-        member: ['create', 'update', 'delete'],
-        invitation: ['create', 'cancel'],
-        team: ['create', 'update', 'delete'],
+        organization: ['read', 'update', 'delete'],
+        member: ['read', 'create', 'update', 'delete'],
+        invitation: ['read', 'create', 'cancel'],
+        team: ['read', 'create', 'update', 'delete'],
         ac: ['create', 'read', 'update', 'delete'],
+        customers: ['read', 'write', 'delete'],
         orders: ['read', 'write', 'delete'],
-        employees: ['read', 'write', 'delete'],
-        customers: ['read', 'write', 'delete']
+        products: ['read', 'write', 'delete'],
+        integrations: ['read', 'write', 'delete'],
+        webhooks: ['read', 'write', 'delete'],
+        sync: ['read', 'write'],
+        segments: ['read', 'write', 'delete'],
+        campaigns: ['read', 'write', 'delete'],
+        supportTickets: ['read', 'write', 'delete'],
+        tags: ['read', 'write', 'delete'],
+        reports: ['read']
     },
     admin: {
-        organization: ['update'],
-        member: ['create', 'update', 'delete'],
-        invitation: ['create', 'cancel'],
-        team: ['create', 'update', 'delete'],
-        ac: ['create', 'read', 'update', 'delete'],
+        organization: ['read', 'update'],
+        member: ['read', 'create', 'update', 'delete'],
+        invitation: ['read', 'create', 'cancel'],
+        team: ['read', 'create', 'update', 'delete'],
+        ac: ['read'],
+        customers: ['read', 'write', 'delete'],
         orders: ['read', 'write', 'delete'],
-        employees: ['read', 'write', 'delete'],
-        customers: ['read', 'write', 'delete']
+        products: ['read', 'write', 'delete'],
+        integrations: ['read', 'write', 'delete'],
+        webhooks: ['read', 'write', 'delete'],
+        sync: ['read', 'write'],
+        segments: ['read', 'write', 'delete'],
+        campaigns: ['read', 'write', 'delete'],
+        supportTickets: ['read', 'write', 'delete'],
+        tags: ['read', 'write', 'delete'],
+        reports: ['read']
     },
     member: {
         organization: [],
@@ -25,10 +60,18 @@ export const DEFAULT_ROLES = {
         invitation: [],
         team: [],
         ac: [],
+        customers: ['read'],
         orders: ['read'],
-        employees: ['read'],
-        customers: ['read']
+        products: ['read'],
+        integrations: ['read'],
+        webhooks: [],
+        sync: [],
+        segments: ['read'],
+        campaigns: ['read'],
+        supportTickets: ['read', 'write'],
+        tags: ['read'],
+        reports: []
     }
-} as const;
+} as const satisfies Record<string, RolePermissions>;
 
 export type DefaultRoleName = keyof typeof DEFAULT_ROLES;
