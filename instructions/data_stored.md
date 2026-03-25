@@ -85,14 +85,14 @@ Email/phone verification tokens.
 
 A business/tenant in the multi-tenant system.
 
-| Field       | Type     | Description                    |
-| :---------- | :------- | :----------------------------- |
-| `id`        | String   | Unique identifier              |
-| `name`      | String   | Organization name              |
-| `slug`      | String   | URL-friendly slug (unique)     |
-| `logo`      | String?  | Logo URL                       |
-| `metadata`  | String?  | JSON string for extra settings |
-| `createdAt` | DateTime | Creation date                  |
+| Field       | Type     | Description                              |
+| :---------- | :------- | :--------------------------------------- |
+| `id`        | String   | Unique identifier                        |
+| `name`      | String   | Organization name                        |
+| `slug`      | String   | URL-friendly slug (unique)               |
+| `logo`      | String?  | Logo URL                                 |
+| `settings`  | JSON?    | { timezone, locale, currency, branding } |
+| `createdAt` | DateTime | Creation date                            |
 
 **Relations:**
 
@@ -106,6 +106,7 @@ A business/tenant in the multi-tenant system.
 - Integrations (one-to-many)
 - SupportTickets (one-to-many)
 - AuditLogs (one-to-many)
+- Roles (one-to-many)
 
 ---
 
@@ -127,14 +128,17 @@ Links users to organizations with roles.
 
 ### OrganizationRole
 
-Defines role permissions per organization.
+Defines role permissions per organization (managed by Better Auth's dynamic access control).
 
-| Field            | Type   | Description       |
-| :--------------- | :----- | :---------------- |
-| `id`             | String | Unique identifier |
-| `organizationId` | String | Organization      |
-| `role`           | String | Role name         |
-| `permission`     | String | Permission string |
+| Field            | Type     | Description                                                      |
+| :--------------- | :------- | :--------------------------------------------------------------- |
+| `id`             | String   | Unique identifier                                                |
+| `organizationId` | String   | Organization                                                     |
+| `name`           | String   | Role name (owner, admin, member, custom)                         |
+| `permissions`    | String[] | Array of permissions e.g., ['customers:read', 'customers:write'] |
+| `createdAt`      | DateTime | Creation date                                                    |
+
+**Unique constraint:** (organizationId, name)
 
 ---
 
@@ -240,6 +244,8 @@ Customer tags for segmentation.
 | `color`          | String | Hex color code      |
 | `organizationId` | String | Owning organization |
 
+**Unique constraint:** (organizationId, name)
+
 ---
 
 ### Segment
@@ -255,6 +261,8 @@ Customer segments with filter rules.
 | `organizationId` | String   | Owning organization                                                     |
 | `createdAt`      | DateTime | Creation date                                                           |
 | `updatedAt`      | DateTime | Last update                                                             |
+
+**Unique constraint:** (organizationId, name)
 
 ---
 
@@ -378,16 +386,21 @@ Line items in an order.
 
 Marketing campaigns.
 
-| Field            | Type     | Description          |
-| :--------------- | :------- | :------------------- |
-| `id`             | String   | Unique identifier    |
-| `name`           | String   | Campaign name        |
-| `description`    | String?  | Campaign description |
-| `organizationId` | String   | Owning organization  |
-| `createdAt`      | DateTime | Creation date        |
-| `updatedAt`      | DateTime | Last update          |
-
-**Note:** Additional fields (type, status, segmentId, template, metrics) should be added for full implementation.
+| Field            | Type      | Description                                          |
+| :--------------- | :-------- | :--------------------------------------------------- |
+| `id`             | String    | Unique identifier                                    |
+| `name`           | String    | Campaign name                                        |
+| `description`    | String?   | Campaign description                                 |
+| `organizationId` | String    | Owning organization                                  |
+| `segmentId`      | String?   | Targeted segment ID                                  |
+| `type`           | String    | Campaign type (email, sms)                           |
+| `status`         | String    | Status (draft, scheduled, active, paused, completed) |
+| `content`        | JSON?     | { subject, body, templateId }                        |
+| `scheduledAt`    | DateTime? | Scheduled send time                                  |
+| `sentAt`         | DateTime? | Actual send time                                     |
+| `metrics`        | JSON?     | { sent, delivered, opened, clicked, converted }      |
+| `createdAt`      | DateTime  | Creation date                                        |
+| `updatedAt`      | DateTime  | Last update                                          |
 
 ---
 
@@ -563,6 +576,7 @@ Tracks user actions for compliance.
 ```
 Organization
 ├── Members (User ↔ Organization)
+├── Roles (OrganizationRole)
 ├── Customers
 │   ├── Orders
 │   │   └── OrderItems → Products
@@ -580,3 +594,54 @@ Organization
 ├── SupportTickets
 └── AuditLogs (User is actor)
 ```
+
+---
+
+## Database Indexes
+
+The schema includes indexes for common query patterns:
+
+| Model          | Indexes                                                        |
+| :------------- | :------------------------------------------------------------- |
+| User           | email (unique)                                                 |
+| Session        | token (unique), userId                                         |
+| Account        | userId                                                         |
+| Verification   | identifier                                                     |
+| Member         | userId, organizationId, (userId, organizationId) unique        |
+| Invitation     | organizationId, email                                          |
+| Customer       | organizationId, email, lifecycleStage, rfmSegment, lastOrderAt |
+| CustomerEvent  | customerId, eventType, occurredAt                              |
+| Tag            | organizationId, (organizationId, name) unique                  |
+| Segment        | organizationId, (organizationId, name) unique                  |
+| Product        | organizationId, externalId, shopifyProductId                   |
+| ProductVariant | productId                                                      |
+| Order          | organizationId, customerId, externalId, shopifyOrderId         |
+| Campaign       | organizationId, status                                         |
+| Integration    | orgId, provider                                                |
+| WebhookLog     | integrationId, topic, status, createdAt                        |
+| SyncLog        | integrationId, syncType, status                                |
+| SupportTicket  | organizationId                                                 |
+| AuditLog       | organizationId, userId                                         |
+
+---
+
+## Pending Models
+
+These models are planned but not yet in the schema:
+
+### Payment (Planned)
+
+For Fawry payment gateway integration:
+
+| Field           | Type     | Description                          |
+| :-------------- | :------- | :----------------------------------- |
+| `id`            | String   | Unique identifier                    |
+| `orderId`       | String   | Related order                        |
+| `amount`        | Decimal  | Payment amount                       |
+| `currency`      | String   | Currency (default: EGP)              |
+| `status`        | String   | pending, completed, failed, refunded |
+| `method`        | String   | fawry, card, wallet                  |
+| `transactionId` | String?  | Provider's transaction ID            |
+| `webhookData`   | JSON?    | Callback data                        |
+| `createdAt`     | DateTime | Payment initiation time              |
+| `updatedAt`     | DateTime | Last update                          |
