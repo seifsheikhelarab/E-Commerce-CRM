@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import * as Sentry from '@sentry/bun';
 import { checkEnv, env } from './config/env.config.js';
 import prisma from './config/prisma.config.js';
 import {
@@ -10,12 +11,32 @@ import {
 } from './middlewares/error.middleware.js';
 import logger from './utils/logger.util.js';
 import apiRouter from './api/index.js';
+import { apiReference } from '@scalar/express-api-reference';
+import openApi from './openapi.json' with { type: 'json' };
 
 checkEnv();
 
 const app = express();
 
-app.use(helmet());
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                'script-src': [
+                    "'self'",
+                    "'unsafe-inline'",
+                    'https://cdn.jsdelivr.net'
+                ],
+                'script-src-elem': [
+                    "'self'",
+                    "'unsafe-inline'",
+                    'https://cdn.jsdelivr.net'
+                ]
+            }
+        }
+    })
+);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(
@@ -29,6 +50,10 @@ app.use(
 
 // Auth routes
 app.use('/api', apiRouter);
+app.use('/docs', apiReference({ content: openApi }));
+
+// Sentry error handler - captures 5xx errors
+Sentry.setupExpressErrorHandler(app);
 
 // Error handling
 app.use(notFoundHandler);
@@ -49,6 +74,7 @@ export async function startServer(): Promise<void> {
             logger.info(
                 `[Init] Server running on http://localhost:${env.port}`
             );
+            logger.info(`[Docs] Scalar docs http://localhost:${env.port}/docs`);
         });
 
         /**
@@ -57,6 +83,7 @@ export async function startServer(): Promise<void> {
         process.on('SIGTERM', async () => {
             logger.info('SIGTERM received, shutting down gracefully...');
             server.close(async () => {
+                await Sentry.close(2000);
                 await prisma.$disconnect();
                 logger.info('Server closed');
                 process.exit(0);
@@ -66,6 +93,7 @@ export async function startServer(): Promise<void> {
         process.on('SIGINT', async () => {
             logger.info('SIGINT received, shutting down gracefully...');
             server.close(async () => {
+                await Sentry.close(2000);
                 await prisma.$disconnect();
                 logger.info('Server closed');
                 process.exit(0);

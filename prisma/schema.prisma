@@ -83,7 +83,7 @@ model Organization {
     logo        String?
     settings    Json?    // { timezone, locale, currency, branding }
     createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+    updatedAt   DateTime @updatedAt @default(now())
     members     Member[]
     invitations Invitation[]
     customers   Customer[]

@@ -7,9 +7,8 @@ export const env = {
     corsOrigin: process.env.CORS_ORIGIN,
     timeZone: process.env.TZ,
 
-    // JWT Configuration
-    jwtSecret: process.env.JWT_SECRET,
-    jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
+    // Better Auth
+    betterAuthSecret: process.env.BETTER_AUTH_SECRET,
 
     // Database Configuration
     databaseUrl: process.env.DATABASE_URL,
@@ -34,8 +33,7 @@ export function checkEnv(): void {
         !env.port ||
         !env.nodeEnv ||
         !env.corsOrigin ||
-        !env.jwtSecret ||
-        !env.jwtRefreshSecret ||
+        !env.betterAuthSecret ||
         !env.databaseUrl ||
         !env.smtpHost ||
         !env.smtpPort ||

@@ -1,35 +1,90 @@
 {
-    "version": 1,
-    "skills": {
-        "better-auth-best-practices": {
-            "source": "better-auth/skills",
-            "sourceType": "github",
-            "computedHash": "9ab075b5061be2a5f299c10505667345cc1ec76e8de4120901cfd586643e776f"
-        },
-        "create-auth-skill": {
-            "source": "better-auth/skills",
-            "sourceType": "github",
-            "computedHash": "393e8d2d795fa5797c9a4e0665f29183ea2e140233db59746d510340a10456e6"
-        },
-        "email-and-password-best-practices": {
-            "source": "better-auth/skills",
-            "sourceType": "github",
-            "computedHash": "7786d722fa682b3d6a99793e73a9d51b59becefa595676134a993020633e068f"
-        },
-        "openapi-spec-generation": {
-            "source": "wshobson/agents",
-            "sourceType": "github",
-            "computedHash": "3e9259f0b818eec2d830850db03be5b96d80a91eb7b7ed44f7f940e54b31dc99"
-        },
-        "organization-best-practices": {
-            "source": "better-auth/skills",
-            "sourceType": "github",
-            "computedHash": "fa7a76e45a1f9632e6d63e92b476cf566e64f6e93a2c8ee00bc77b4a74008fbd"
-        },
-        "prisma-expert": {
-            "source": "sickn33/antigravity-awesome-skills",
-            "sourceType": "github",
-            "computedHash": "c24cb9aebbe977a75b1bfe207440d604ac54e1802b8f3ad24aad66c001125a60"
-        }
+  "version": 1,
+  "skills": {
+    "better-auth-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "computedHash": "9ab075b5061be2a5f299c10505667345cc1ec76e8de4120901cfd586643e776f"
+    },
+    "better-auth-security-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "computedHash": "ed38caef4b297cc399d717258d6ea4e6ecb8894c453c83450064c7e7c6e5cc02"
+    },
+    "create-auth-skill": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "computedHash": "393e8d2d795fa5797c9a4e0665f29183ea2e140233db59746d510340a10456e6"
+    },
+    "email-and-password-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "computedHash": "7786d722fa682b3d6a99793e73a9d51b59becefa595676134a993020633e068f"
+    },
+    "openapi-spec-generation": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "3e9259f0b818eec2d830850db03be5b96d80a91eb7b7ed44f7f940e54b31dc99"
+    },
+    "organization-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "computedHash": "fa7a76e45a1f9632e6d63e92b476cf566e64f6e93a2c8ee00bc77b4a74008fbd"
+    },
+    "prisma-expert": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "c24cb9aebbe977a75b1bfe207440d604ac54e1802b8f3ad24aad66c001125a60"
+    },
+    "sentry-code-review": {
+      "source": "getsentry/sentry-for-ai",
+      "sourceType": "github",
+      "computedHash": "5f7d4418a3010e3033af6663fadb859a75d8b8446bf598103f0f5c14b56118f2"
+    },
+    "sentry-create-alert": {
+      "source": "getsentry/sentry-for-ai",
+      "sourceType": "github",
+      "computedHash": "db9114eb711176051edf942474672f85d59b4b50cad12a29a566292e57d7b7c4"
+    },
+    "sentry-feature-setup": {
+      "source": "getsentry/sentry-for-ai",
+      "sourceType": "github",
+      "computedHash": "45f63a8e3338a2a6a286175b50c6019f02c9d94fd02912bb5d94950896014953"
+    },
+    "sentry-fix-issues": {
+      "source": "getsentry/sentry-for-ai",
+      "sourceType": "github",
+      "computedHash": "d8f04b1844eb6ae5721d58507a69be1f880a7cd231560de5097b3e40d8d11e1c"
+    },
+    "sentry-node-sdk": {
+      "source": "getsentry/sentry-for-ai",
+      "sourceType": "github",
+      "computedHash": "1bb03a1e8697513aee9f06d2e106b19b5a0b4ddb8622b255b9afb0c2a0e64fb9"
+    },
+    "sentry-pr-code-review": {
+      "source": "getsentry/sentry-for-ai",
+      "sourceType": "github",
+      "computedHash": "fa7f6a970e26ffdea45ee3be3aa0db3c701e5c4beb534eb033c67e7a8a3adcd6"
+    },
+    "sentry-sdk-setup": {
+      "source": "getsentry/sentry-for-ai",
+      "sourceType": "github",
+      "computedHash": "5a964ec81aa652b3eb1604002b63fe4a1b242126406f7160d839946c373e2bbe"
+    },
+    "sentry-sdk-upgrade": {
+      "source": "getsentry/sentry-for-ai",
+      "sourceType": "github",
+      "computedHash": "6733ffde5be0edd08988f4c47383fe399999c5a595f537b4a071aae5472df72c"
+    },
+    "sentry-workflow": {
+      "source": "getsentry/sentry-for-ai",
+      "sourceType": "github",
+      "computedHash": "3384bbf87660a1e633ad72e56f0fb520c4d93956e41eb4ef8d70187a29955fb8"
+    },
+    "two-factor-authentication-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "computedHash": "c4f3a299c62c1985b774b7c28e53b7e55c565dbf973fd52b08899e4bcfffa3f9"
     }
+  }
 }

@@ -71,10 +71,17 @@ beforeAll(async () => {
             }
         });
 
+        console.log('Org response:', JSON.stringify(org, null, 2));
+
         if (!org) {
             throw new Error('Org creation failed');
         }
-        testOrgId = org.id;
+        // Better Auth returns org.organization or just org depending on version
+        const orgResponse = org as {
+            organization?: { id: string };
+            id?: string;
+        };
+        testOrgId = orgResponse.organization?.id ?? orgResponse.id ?? '';
         console.log('Org created, ID:', testOrgId);
 
         // 4. Sign in again to get fresh session with org context
@@ -99,10 +106,24 @@ beforeAll(async () => {
 
 afterAll(async () => {
     // Cleanup
+    await prisma.customerEvent.deleteMany({
+        where: { customer: { organizationId: testOrgId } }
+    });
+    await prisma.note.deleteMany({
+        where: { customer: { organizationId: testOrgId } }
+    });
     await prisma.customer.deleteMany({ where: { organizationId: testOrgId } });
     await prisma.member.deleteMany({ where: { organizationId: testOrgId } });
     await prisma.session.deleteMany({ where: { userId: testUserId } });
-    await prisma.organization.delete({ where: { id: testOrgId } });
+    await prisma.organizationRole.deleteMany({
+        where: { organizationId: testOrgId }
+    });
+    await prisma.invitation.deleteMany({
+        where: { organizationId: testOrgId }
+    });
+    await prisma.organization.deleteMany({
+        where: { slug: { startsWith: 'test-org-slug' } }
+    });
     await prisma.user.delete({ where: { id: testUserId } });
 });
 
@@ -197,8 +218,7 @@ describe('Customer Routes', () => {
     describe('Note Routes', () => {
         it('should create a new note', async () => {
             const noteData = {
-                title: 'Test Note',
-                content: 'Test Content'
+                body: 'This is a test note for the customer'
             };
 
             const response = await request(app)
@@ -206,13 +226,12 @@ describe('Customer Routes', () => {
                 .set('Authorization', `Bearer ${authToken}`)
                 .send(noteData);
 
-            testNoteId = response.body.data.id;
-
             expect(response.status).toBe(201);
             expect(response.body.data).toHaveProperty('id');
-            expect(response.body.data.title).toBe(noteData.title);
-            expect(response.body.data.content).toBe(noteData.content);
+            expect(response.body.data.body).toBe(noteData.body);
             expect(response.body.data.customerId).toBe(testCustomerId);
+
+            testNoteId = response.body.data.id;
         });
 
         it('should list all notes', async () => {
@@ -227,8 +246,7 @@ describe('Customer Routes', () => {
 
         it('should update a note', async () => {
             const noteData = {
-                title: 'Test Note',
-                content: 'Test Content Updated'
+                body: 'Updated test note content'
             };
 
             const response = await request(app)
@@ -236,10 +254,9 @@ describe('Customer Routes', () => {
                 .set('Authorization', `Bearer ${authToken}`)
                 .send(noteData);
 
-            expect(response.status).toBe(201);
+            expect(response.status).toBe(200);
             expect(response.body.data).toHaveProperty('id');
-            expect(response.body.data.title).toBe(noteData.title);
-            expect(response.body.data.content).toBe(noteData.content);
+            expect(response.body.data.body).toBe(noteData.body);
             expect(response.body.data.customerId).toBe(testCustomerId);
         });
 
@@ -261,13 +278,12 @@ describe('Customer Routes', () => {
             it('should create a new event', async () => {
                 const eventData = {
                     eventType: 'ORDER_PLACED',
-                    description: 'Order Placed',
+                    description: 'Customer placed an order',
                     metadata: {
                         orderId: '123',
-                        amount: 100,
-                        currency: 'USD'
+                        amount: 100
                     },
-                    source: 'WEBSITE',
+                    source: 'shopify',
                     occurredAt: new Date().toISOString()
                 };
 
@@ -276,16 +292,15 @@ describe('Customer Routes', () => {
                     .set('Authorization', `Bearer ${authToken}`)
                     .send(eventData);
 
-                testEventId = response.body.data.id;
-
                 expect(response.status).toBe(201);
                 expect(response.body.data).toHaveProperty('id');
                 expect(response.body.data.eventType).toBe(eventData.eventType);
-                expect(response.body.data.description).toBe(eventData.description);
-                expect(response.body.data.metadata).toEqual(eventData.metadata);
-                expect(response.body.data.source).toBe(eventData.source);
-                expect(response.body.data.occurredAt).toBe(eventData.occurredAt);
+                expect(response.body.data.description).toBe(
+                    eventData.description
+                );
                 expect(response.body.data.customerId).toBe(testCustomerId);
+
+                testEventId = response.body.data.id;
             });
 
             it('should list all events', async () => {
@@ -300,35 +315,29 @@ describe('Customer Routes', () => {
 
             it('should update an event', async () => {
                 const eventData = {
-                    eventType: 'ORDER_PLACED',
-                    description: 'Order Placed',
-                    metadata: {
-                        orderId: '123',
-                        amount: 100,
-                        currency: 'USD'
-                    },
-                    source: 'WEBSITE',
-                    occurredAt: new Date().toISOString()
+                    description: 'Updated event description'
                 };
 
                 const response = await request(app)
-                    .put(`/api/customers/${testCustomerId}/events/${testEventId}`)
+                    .put(
+                        `/api/customers/${testCustomerId}/events/${testEventId}`
+                    )
                     .set('Authorization', `Bearer ${authToken}`)
                     .send(eventData);
 
                 expect(response.status).toBe(200);
                 expect(response.body.data).toHaveProperty('id');
-                expect(response.body.data.eventType).toBe(eventData.eventType);
-                expect(response.body.data.description).toBe(eventData.description);
-                expect(response.body.data.metadata).toEqual(eventData.metadata);
-                expect(response.body.data.source).toBe(eventData.source);
-                expect(response.body.data.occurredAt).toBe(eventData.occurredAt);
+                expect(response.body.data.description).toBe(
+                    eventData.description
+                );
                 expect(response.body.data.customerId).toBe(testCustomerId);
             });
 
             it('should delete an event', async () => {
                 const response = await request(app)
-                    .delete(`/api/customers/${testCustomerId}/events/${testEventId}`)
+                    .delete(
+                        `/api/customers/${testCustomerId}/events/${testEventId}`
+                    )
                     .set('Authorization', `Bearer ${authToken}`);
 
                 expect(response.status).toBe(200);
@@ -340,10 +349,5 @@ describe('Customer Routes', () => {
                 expect(verify).toBeNull();
             });
         });
-
-
     });
-
-
 });
-

@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import prisma from '../config/prisma.config.js';
 import { DEFAULT_ROLES } from '../config/roles.config.js';
+import { auth } from '../api/auth/auth.js';
 
 const BATCH_SIZE = 100;
 
@@ -42,7 +43,7 @@ async function resetDatabase() {
 }
 
 async function createOrganizations() {
-    console.log('Creating organizations...');
+    console.log('Creating organizations via Better Auth API...');
 
     const existingOrgs = await prisma.organization.findMany();
     if (existingOrgs.length > 0) {
@@ -52,35 +53,52 @@ async function createOrganizations() {
         return existingOrgs;
     }
 
-    const org1 = await prisma.organization.create({
-        data: {
-            name: 'Demo Organization',
-            slug: 'demo-org',
-            logo: faker.image.url(),
-            createdAt: new Date()
-        }
-    });
+    const orgNames = ['Demo Organization', faker.company.name()];
+    const organizations = [];
 
-    const org2 = await prisma.organization.create({
-        data: {
-            name: faker.company.name(),
-            slug: 'test-org',
-            logo: faker.image.url(),
-            createdAt: new Date()
-        }
-    });
+    for (const name of orgNames) {
+        const slug =
+            name
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '') +
+            '-' +
+            Date.now();
 
-    const organizations = [org1, org2];
+        const orgResponse = await auth.api.createOrganization({
+            body: {
+                name,
+                slug,
+                logo: faker.image.url()
+            }
+        });
 
-    for (const org of organizations) {
-        for (const [roleName, permissions] of Object.entries(DEFAULT_ROLES)) {
-            await prisma.organizationRole.create({
-                data: {
-                    organizationId: org.id,
-                    role: roleName,
-                    permission: JSON.stringify(permissions)
+        const org = orgResponse as {
+            organization?: { id: string };
+            id?: string;
+        };
+        const orgId = org.organization?.id ?? org.id;
+
+        if (orgId) {
+            organizations.push({ id: orgId });
+
+            for (const [roleName, permissions] of Object.entries(
+                DEFAULT_ROLES
+            )) {
+                const flatPermissions: string[] = [];
+                for (const [resource, perms] of Object.entries(permissions)) {
+                    for (const perm of perms) {
+                        flatPermissions.push(`${resource}:${perm}`);
+                    }
                 }
-            });
+                await prisma.organizationRole.create({
+                    data: {
+                        organizationId: orgId,
+                        name: roleName,
+                        permissions: flatPermissions
+                    }
+                });
+            }
         }
     }
 
@@ -89,29 +107,42 @@ async function createOrganizations() {
 }
 
 async function createUsers() {
-    console.log('Creating users...');
+    console.log('Creating users via Better Auth API...');
 
     const users = [];
-    const passwordHash =
-        '$2b$10$rqJ5rXqJQJQJQJQJQJQJQJQJQJQJQJQJQJQJQJQJQJQJQJQJQJQJ';
 
-    for (let i = 0; i < 50; i++) {
-        const user = await prisma.user.create({
-            data: {
-                name: faker.person.fullName(),
-                email: faker.internet.email().toLowerCase(),
-                emailVerified: faker.datatype.boolean(),
-                image: faker.image.avatar(),
-                accounts: {
-                    create: {
-                        providerId: 'email',
-                        accountId: faker.string.alphanumeric(20),
-                        password: passwordHash
-                    }
-                }
+    // Create first user as the admin (will be organization owner)
+    const adminEmail = 'admin@example.com';
+    const adminPassword = 'Admin123!';
+
+    const adminUser = await auth.api.signUpEmail({
+        body: {
+            email: adminEmail,
+            password: adminPassword,
+            name: 'Admin User'
+        }
+    });
+
+    if (adminUser?.user) {
+        users.push({ id: adminUser.user.id, email: adminEmail });
+    }
+
+    // Create remaining users via signUpEmail
+    for (let i = 0; i < 49; i++) {
+        const email = faker.internet.email().toLowerCase();
+        const password = 'TestPassword123!';
+
+        const user = await auth.api.signUpEmail({
+            body: {
+                email,
+                password,
+                name: faker.person.fullName()
             }
         });
-        users.push(user);
+
+        if (user?.user) {
+            users.push({ id: user.user.id, email });
+        }
     }
 
     console.log(`Created ${users.length} users\n`);
@@ -120,7 +151,7 @@ async function createUsers() {
 
 async function createMemberships(
     organizations: { id: string }[],
-    users: { id: string }[]
+    users: { id: string; email: string }[]
 ) {
     console.log('Creating memberships...');
 
@@ -136,8 +167,8 @@ async function createMemberships(
                 count % 10 === 0
                     ? 'admin'
                     : count % 20 === 0
-                      ? 'root'
-                      : 'member';
+                        ? 'root'
+                        : 'member';
 
             await prisma.member.create({
                 data: {

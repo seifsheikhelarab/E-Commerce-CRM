@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
-import { bearer, organization } from 'better-auth/plugins';
+import { bearer } from 'better-auth/plugins/bearer';
+import { organization } from 'better-auth/plugins/organization';
 import { createAccessControl } from 'better-auth/plugins/access';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import prisma from '../../config/prisma.config.js';
@@ -8,6 +9,7 @@ import type { Request } from 'express';
 import { env } from '../../config/env.config.js';
 import { sendEmail } from '../../utils/email.util.js';
 import { DEFAULT_ROLES } from '../../config/roles.config.js';
+import loggerUtil from '../../utils/logger.util.js';
 
 const ac = createAccessControl({
     organization: ['read', 'update', 'delete'],
@@ -29,12 +31,20 @@ const ac = createAccessControl({
 });
 
 export const auth = betterAuth({
+    baseURL: env.appUrl,
     database: prismaAdapter(prisma, {
         provider: 'postgresql'
     }),
     rateLimit: {
         window: 10,
         max: 100
+    },
+    session: {
+        expiresIn: 60 * 60 * 24 * 7,
+        updateAge: 60 * 60 * 24,
+        cookieCache: {
+            maxAge: 60 * 60 * 24
+        }
     },
     emailAndPassword: {
         enabled: true,
@@ -55,17 +65,28 @@ export const auth = betterAuth({
     },
     emailVerification: {
         sendVerificationEmail: async ({ user, url }) => {
-            await sendEmail({
-                to: user.email,
-                subject: 'Verify your email address',
-                html: `
-					<p>Hi ${user.name ?? 'there'},</p>
-					<p>Welcome to our CRM! Please verify your email address by clicking the button below:</p>
-					<br/>
-					<a href="${url}" style="padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Verify Email</a>
-				`
-            });
+            if (env.nodeEnv !== "development") {
+                await sendEmail({
+                    to: user.email,
+                    subject: 'Verify your email address',
+                    html: `
+    					<p>Hi ${user.name ?? 'there'},</p>
+    					<p>Welcome to our CRM! Please verify your email address by clicking the button below:</p>
+    					<br/>
+    					<a href="${url}" style="padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Verify Email</a>
+    				`
+                });
+            } else {
+                loggerUtil.info(`User ${user.email} was sent a verification mail with url ${url}`)
+            }
         }
+    },
+    user: {
+        changeEmail: { enabled: true },
+        deleteUser: { enabled: true }
+    },
+    account: {
+        accountLinking: { enabled: true }
     },
     plugins: [
         bearer(),
@@ -82,6 +103,15 @@ export const auth = betterAuth({
             organizationLimit: 1,
             // The creator gets the root role with full permissions.
             creatorRole: 'root',
+            // Use slug instead of ID for organization identification
+            defaultOrganizationIdField: 'slug',
+            // Invitation settings
+            invitationExpiresIn: 60 * 60 * 24 * 7,
+            invitationLimit: 100,
+            // Membership settings
+            membershipLimit: 100,
+            // Prevent accidental organization deletion
+            disableOrganizationDeletion: true,
             sendInvitationEmail: async (data) => {
                 const inviteUrl = `${env.appUrl}/accept-invitation?id=${data.invitation.id}`;
                 await sendEmail({
@@ -113,7 +143,10 @@ export const auth = betterAuth({
         }
     },
     advanced: {
-        disableOriginCheck: true
+        cookiePrefix: 'better-auth',
+        ...(process.env.NODE_ENV === 'production' && {
+            useSecureCookies: true
+        })
     },
     databaseHooks: {
         session: {

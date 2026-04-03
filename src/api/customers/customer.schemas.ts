@@ -102,7 +102,6 @@ export const updateCustomer = z.object({
 });
 
 export const createNote = z.object({
-    customerId: z.nanoid(),
     body: z.string().min(1, 'Note body cannot be empty').nonempty().trim()
 });
 

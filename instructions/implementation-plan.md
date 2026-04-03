@@ -10,7 +10,7 @@ This plan outlines the phased implementation of an E-Commerce CRM system designe
 - **ORM**: Prisma with PostgreSQL
 - **Auth**: Better Auth with organization plugin
 - **Validation**: Zod
-- **Logging**: Pino + pino-pretty
+- **Logging**: Pino + pino-pretty + pino-http
 
 ---
 
@@ -62,6 +62,7 @@ Priority feature for business migration from Excel.
     - Duplicate detection (email, phone, externalId)
     - Error reporting with line numbers
     - Import history logging
+    - Rollback on partial failure
 - Entities: Customers, Products, Orders
 
 ### 1.2 Export System
@@ -102,6 +103,15 @@ The schema has the fields - need to implement the calculation logic.
         - AT_RISK → CHURNED → WINBACK
     - VIP: top 5% by LTV
 
+### Phase 2.4 — Customer Aggregates Refresh
+
+Add an explicit trigger when:
+
+    An order is created or updated → recalculate that customer's RFM + churn score immediately (async via BullMQ, not inline)
+    A customer reaches an order count threshold → trigger lifecycle transition
+
+This matters because a customer who just placed their 10th order shouldn't still show as "At Risk" until 2 AM.
+
 ---
 
 ## Phase 3: Authentication Enhancement
@@ -124,15 +134,6 @@ socialProviders: {
 }
 ```
 
-### 3.2 OTP Verification
-
-- Add OTP model to schema
-- Create `src/api/auth/otp.service.ts`:
-    - Generate/validate OTP
-    - Rate limiting
-    - Expiry (15 min)
-    - Endpoint for resend
-
 ---
 
 ## Phase 4: Marketing & Campaigns
@@ -140,7 +141,7 @@ socialProviders: {
 ### 4.1 Expand Campaign Model
 
 - Add to schema:
-    - `type`: email | sms
+    - `type`: email | other
     - `status`: draft | scheduled | active | paused | completed
     - `segmentId`: targeting
     - `template`, `content`
@@ -162,24 +163,20 @@ socialProviders: {
     - Unsubscribe handling
     - Bounce tracking
 
-### 4.4 SMS Campaigns
+### 4.4 Notification Center
 
-- Create `src/api/campaigns/sms.service.ts`:
-    - Twilio integration (see Phase 5)
+Campaigns are outbound (you initiate). But the system also needs internal notifications:
+
+    New support ticket assigned
+    Churn risk spike (customer crossed High threshold)
+    Import job completed
+    Integration sync failed
 
 ---
 
 ## Phase 5: External Services
 
-### 5.1 SMS Gateway (Twilio)
-
-Not a traditional "integration" - add to campaigns or create `src/utils/twilio.util.ts`:
-
-- Send SMS utility
-- Delivery status tracking
-- Phone verification
-
-### 5.2 Payment Gateway (Fawry)
+### 5.1 Payment Gateway (Fawry)
 
 - Add Payment model to schema:
     ```prisma
@@ -218,14 +215,6 @@ Add to Organization `settings` JSON:
 }
 ```
 
-### 5.4 Additional E-commerce Platforms (Future)
-
-The Integration model supports multiple providers. Future additions:
-
-- WooCommerce
-- Magento
-- Custom REST API
-
 ---
 
 ## Phase 6: Document Generation
@@ -238,6 +227,10 @@ The Integration model supports multiple providers. Future additions:
     - Company branding
     - QR code support
     - Multi-language (EN/AR)
+
+### 6.2 PDF Generation
+
+Template storage — the plan generates PDFs programmatically but doesn't address customization. Small businesses in Egypt will want their logo, colors, and Arabic company name on invoices.
 
 ---
 
@@ -286,6 +279,16 @@ The Integration model supports multiple providers. Future additions:
     - Filter by date, segment, product
     - Export to Excel/PDF
 
+### 8.3 — Audit Log API
+
+The Audit Log model exists but there's no documented API for it. Add:
+
+- `GET /audit-logs` with filters: `entityType`, `entityId`, `userId`, `dateRange`
+- Pagination required, these tables grow fast
+- Read-only, no write endpoints via API (only internal service writes to it)
+
+This is a trust and accountability feature that Egyptian business owners specifically care about — knowing which employee deleted a customer record.
+
 ---
 
 ## Cron Jobs
@@ -311,6 +314,13 @@ The Integration model supports multiple providers. Future additions:
 - LTV recalculation
 
 ---
+
+## Data Retention Policy (Configurable per Organization)
+
+- Audit logs: 90 days default, configurable
+- Processed webhooks: 30 days, purged by nightly cron
+- Import history: 60 days
+- Notification records: 30 days
 
 ## Implementation Order
 

@@ -25,7 +25,7 @@ export const validateRequest = (
             const result = schema.safeParse(data);
 
             if (!result.success) {
-                errorHandler(result.error, req, res, next);
+                errorHandler(result.error, req, res);
                 return;
             }
 
@@ -48,7 +48,7 @@ export const validateRequest = (
 
             next();
         } catch (err) {
-            errorHandler(err as Error, req, res, next);
+            errorHandler(err as Error, req, res);
             return;
         }
     };
